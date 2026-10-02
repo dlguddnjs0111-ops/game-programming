@@ -1,0 +1,74 @@
+숫자 키에 따른 음계의 주파수를 스피커로 출력하는 함수 (수정본)
+
+#include <stdio.h>
+#include <math.h>
+#include <conio.h>
+#include <windows.h>
+
+int calc_frequency(int octave, int inx);
+void practice_piano(void);
+
+int main(void)
+{
+    printf("1부터 8까지 숫자 키를 누르면\n");
+    printf("각 음의 소리가 출력됩니다.\n\n");
+    printf("1:도 2:레 3:미 4:파 5:솔 6:라 7:시 8:도\n");
+    printf("프로그램 종료는 Esc키 \n");
+    
+    practice_piano();
+    
+    return 0;
+}
+
+void practice_piano(void)
+{
+    int index[] = {0, 2, 4, 5, 7, 9, 11, 12};
+    int freq[8], code, i;
+    
+    // 8개 음계의 주파수를 미리 계산하여 배열에 저장
+    for(i=0; i<8; i++)
+        freq[i] = calc_frequency(4, index[i]);
+        
+    do
+    {
+        code = _getch(); // 키보드 입력 받기
+        
+        if ('1' <= code && code <= '8')
+        {
+            code -= 49; // 아스키코드 '1'은 49이므로 빼주면 0~7 인덱스가 됨
+            Beep(freq[code], 300);
+        }
+    } while(code != 27); // 27은 ESC 키
+}
+
+int calc_frequency(int octave, int inx)
+{
+    double do_scale = 32.7032;
+    // 1/12. 은 실수 연산을 위해 점(.)을 찍은 것입니다.
+    double ratio = pow(2., 1/12.), temp; 
+    int i;
+    
+    temp = do_scale * pow(2, octave - 1);
+    
+    for(i=0; i<inx; i++)
+    {
+        temp = (int)(temp + 0.5); // 반올림 처리
+        temp *= ratio;
+    }
+    
+    return (int)temp;
+}
+
+자료 구조(data structure)란?
+컴퓨터상에서 정보를 표현하기 위하여 데이터와 이들 데이터간의 상호관계를 정의하는것. 
+즉, 컴퓨터상에서 데이터를효율적으로 탐색하고, 추가하거나 삭제하는데 있어서 어떻게 데이터를 저장하거나 연결해야 하는가다루는 분야
+자료구조는 데이터간의 관계를 어떻게 나타낼 것인가에 따라 선형구조와 비선형구조로 구분
+선형구조: 연결리스트(linked list), 스택(stack), 큐(queue), 데크(dequeue) 등
+비선형구조: 트리(tree)와 그래프(graph) 등
+
+
+
+
+
+
+
