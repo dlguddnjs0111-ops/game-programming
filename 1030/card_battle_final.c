@@ -1,9 +1,9 @@
-癤?*
- *  100???섏뼱??: ?꾩씠??移대뱶 諛고?
- *  - ?먮낯 "100???섏뼱?? 寃뚯엫 ?낃렇?덉씠??踰꾩쟾
- *  - 二쇱꽍??[?꿓] ?쒖떆??PPT??"?낃렇?덉씠??N" 踰덊샇? 媛숈뒿?덈떎.
+/*
+ *  100을 넘어라 : 아이템 카드 배틀
+ *  - 원본 "100을 넘어라" 게임 업그레이드 버전
+ *  - 주석의 [업N] 표시는 PPT의 "업그레이드 N" 번호와 같습니다.
  */
-#define _CRT_SECURE_NO_WARNINGS          /* [??] Visual Studio scanf/fopen ?ㅻ쪟 諛⑹? */
+#define _CRT_SECURE_NO_WARNINGS          /* [업6] Visual Studio scanf/fopen 오류 방지 */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,26 +12,26 @@
 #include <conio.h>
 #include <windows.h>
 
-/* ================= [??] 留ㅼ쭅 ?섎쾭 -> ?곸닔 ================= */
-#define MAX_SCORE    100     /* ???レ옄瑜??섍린硫??밸━            */
-#define MIN_NUM      1       /* ?レ옄 移대뱶 理쒖냼媛?                */
-#define MAX_NUM      10      /* ?レ옄 移대뱶 理쒕?媛?                */
-#define ITEM_SLOT    3       /* [??7] ?꾩씠???щ’ ??           */
-#define START_ITEM   2       /* [??7] ?쒖옉 ?꾩씠????           */
-#define BONUS_TURN   4       /* [??2] 蹂대꼫???꾩씠??二쇨린(??    */
-#define MINUS_VALUE  10      /* [??9] ?⑷퀎 媛먯냼??              */
-#define TIME_LIMIT   20      /* [??5] ?쒗븳 ?쒓컙(珥?             */
-#define LOG_LINES    5       /* [??1] 濡쒓렇 以???               */
-#define HISTORY_MAX  10      /* 理쒓렐 ???レ옄 ?쒖떆 媛쒖닔           */
-#define GAUGE_LEN    40      /* [??7] 寃뚯씠吏 湲몄씠               */
-#define SAVE_FILE    "save.dat"     /* [??4] */
-#define RECORD_FILE  "record.txt"   /* [??6] */
-#define SAVE_MAGIC   20261105       /* [??5] ????뚯씪 ?뺤씤??踰덊샇 */
+/* ================= [업8] 매직 넘버 -> 상수 ================= */
+#define MAX_SCORE    100     /* 이 숫자를 넘기면 승리            */
+#define MIN_NUM      1       /* 숫자 카드 최소값                 */
+#define MAX_NUM      10      /* 숫자 카드 최대값                 */
+#define ITEM_SLOT    3       /* [업27] 아이템 슬롯 수            */
+#define START_ITEM   2       /* [업27] 시작 아이템 수            */
+#define BONUS_TURN   4       /* [업32] 보너스 아이템 주기(턴)    */
+#define MINUS_VALUE  10      /* [업29] 합계 감소량               */
+#define TIME_LIMIT   20      /* [업25] 제한 시간(초)             */
+#define LOG_LINES    5       /* [업21] 로그 줄 수                */
+#define HISTORY_MAX  10      /* 최근 낸 숫자 표시 개수           */
+#define GAUGE_LEN    40      /* [업17] 게이지 길이               */
+#define SAVE_FILE    "save.dat"     /* [업34] */
+#define RECORD_FILE  "record.txt"   /* [업36] */
+#define SAVE_MAGIC   20261105       /* [업35] 저장 파일 확인용 번호 */
 
 #define COM   0
 #define USER  1
 
-/* [??6] ??肄붾뱶 (諛⑺뼢?ㅻ뒗 1000???뷀빐???쇰컲 臾몄옄? 援щ텇) */
+/* [업16] 키 코드 (방향키는 1000을 더해서 일반 문자와 구분) */
 #define KEY_UP     (1000 + 72)
 #define KEY_DOWN   (1000 + 80)
 #define KEY_LEFT   (1000 + 75)
@@ -39,53 +39,53 @@
 #define KEY_ENTER  13
 #define KEY_ESC    27
 
-/* [??1] ?됱긽 */
+/* [업11] 색상 */
 enum { C_GRAY = 7, C_DARK = 8, C_BLUE = 9, C_GREEN = 10, C_CYAN = 11,
        C_RED = 12, C_MAGENTA = 13, C_YELLOW = 14, C_WHITE = 15 };
 
-/* [??7] ?꾩씠??醫낅쪟 */
+/* [업27] 아이템 종류 */
 enum { ITEM_NONE = 0, ITEM_DOUBLE, ITEM_MINUS, ITEM_SKIP, ITEM_SEAL, ITEM_KIND };
-const char *ITEM_NAME[ITEM_KIND] = { "(鍮덉뭏)", "?붾툝 x2", "?⑷퀎 -10", "???ㅽ궢", "遊됱씤" };
+const char *ITEM_NAME[ITEM_KIND] = { "(빈칸)", "더블 x2", "합계 -10", "턴 스킵", "봉인" };
 const char *ITEM_DESC[ITEM_KIND] = {
     "",
-    "[?붾툝 x2] ?대쾲 ?댁뿉 ?대뒗 ?レ옄媛 2諛곌? ?⑸땲??",
-    "[?⑷퀎 -10] ?꾩옱 ?⑷퀎瑜?10 以꾩엯?덈떎. (?곷????밸━ ?吏??",
-    "[???ㅽ궢] ?곷????ㅼ쓬 ?댁쓣 嫄대꼫?곌퀬 ?닿? ??踰????⑸땲??",
-    "[遊됱씤] ?곷???媛?????レ옄 移대뱶瑜??ㅼ쓬 1???숈븞 紐??곌쾶 ?⑸땲??"
+    "[더블 x2] 이번 턴에 내는 숫자가 2배가 됩니다.",
+    "[합계 -10] 현재 합계를 10 줄입니다. (상대의 승리 저지용)",
+    "[턴 스킵] 상대의 다음 턴을 건너뛰고 내가 한 번 더 합니다.",
+    "[봉인] 상대의 가장 큰 숫자 카드를 다음 1턴 동안 못 쓰게 합니다."
 };
 
-/* [??3] ?쒖씠??*/
+/* [업23] 난이도 */
 enum { EASY = 0, NORMAL, HARD };
-const char *DIFF_NAME[3] = { "?ъ?", "蹂댄넻", "?대젮?" };
-const char *WHO_NAME[2]  = { "而댄벂??, "?ъ슜?? };
+const char *DIFF_NAME[3] = { "쉬움", "보통", "어려움" };
+const char *WHO_NAME[2]  = { "컴퓨터", "사용자" };
 
 typedef struct {
-    int used[MAX_NUM + 1];      /* 1?대㈃ ?대? ???レ옄          */
-    int sealed[MAX_NUM + 1];    /* [??1] 1?대㈃ 遊됱씤???レ옄     */
-    int items[ITEM_SLOT];       /* [??7] 蹂댁쑀 ?꾩씠??          */
-    int history[HISTORY_MAX];   /* 理쒓렐 ???レ옄                 */
+    int used[MAX_NUM + 1];      /* 1이면 이미 낸 숫자          */
+    int sealed[MAX_NUM + 1];    /* [업31] 1이면 봉인된 숫자     */
+    int items[ITEM_SLOT];       /* [업27] 보유 아이템           */
+    int history[HISTORY_MAX];   /* 최근 낸 숫자                 */
     int history_count;
-    int item_used_total;        /* [??7] ?듦퀎??               */
+    int item_used_total;        /* [업37] 통계용                */
 } Player;
 
 typedef struct {
-    int magic;                  /* [??5] ????뚯씪 ?뺤씤??     */
+    int magic;                  /* [업35] 저장 파일 확인용      */
     Player p[2];                /* p[COM], p[USER]              */
     int sum;
-    int turn;                   /* 吏湲?李⑤? (COM / USER)       */
-    int round;                  /* 吏꾪뻾??????                */
+    int turn;                   /* 지금 차례 (COM / USER)       */
+    int round;                  /* 진행된 턴 수                 */
     int difficulty;
-    int double_on;              /* [??8] ?붾툝 ?곸슜 以?         */
-    int skip_next;              /* [??0] ???ㅽ궢 ?덉빟          */
-    char log[LOG_LINES][80];    /* [??1] 寃뚯엫 濡쒓렇             */
+    int double_on;              /* [업28] 더블 적용 중          */
+    int skip_next;              /* [업30] 턴 스킵 예약          */
+    char log[LOG_LINES][80];    /* [업21] 게임 로그             */
 } Game;
 
 typedef struct { int win, lose, draw; } Record;
 
-int sound_on = 1;               /* [??2] ?뚮━ ON/OFF */
+int sound_on = 1;               /* [업22] 소리 ON/OFF */
 
-/* ---------------- ?⑥닔 ?좎뼵 ---------------- */
-/* 肄섏넄/?붾㈃ */
+/* ---------------- 함수 선언 ---------------- */
+/* 콘솔/화면 */
 void gotoxy(int x, int y);
 void set_color(int color);
 void hide_cursor(void);
@@ -96,16 +96,16 @@ void show_msg(int color, const char *fmt, ...);
 int  get_key(void);
 void press_any_key(int y);
 int  menu_select(int x, int y, const char *items[], int n, int start);
-/* ?뚮━ */
+/* 소리 */
 void snd_move(void); void snd_select(void); void snd_error(void);
 void snd_item(void); void snd_card(void);  void snd_win(void); void snd_lose(void);
-/* ?붾㈃ */
+/* 화면 */
 void splash_screen(void);
 int  main_menu(void);
 void rules_screen(void);
 void record_screen(void);
 void ending_screen(Game *g, int winner);
-/* 寃뚯엫 */
+/* 게임 */
 void new_game(Game *g, int difficulty);
 int  select_difficulty(void);
 int  coin_toss(void);
@@ -117,14 +117,14 @@ void use_item(Game *g, int who, int slot);
 void give_bonus(Game *g);
 void add_log(Game *g, const char *fmt, ...);
 void add_history(Player *p, int card);
-/* 洹몃━湲?*/
+/* 그리기 */
 void draw_game(Game *g);
 void draw_gauge(Game *g);
 void draw_status(Game *g);
 void draw_log(Game *g);
 void draw_box(int x, int y, int w, const char *text, int color, int selected);
 void draw_hand(Game *g, int row, int col, int item_used);
-/* ?먮떒 */
+/* 판단 */
 int  playable(Player *p, int n);
 int  max_playable(Player *p);
 int  min_playable(Player *p);
@@ -138,7 +138,7 @@ int  safe_card(Game *g);
 int  ai_easy(Game *g);
 int  ai_normal(Game *g);
 int  ai_hard(Game *g);
-/* ?뚯씪 */
+/* 파일 */
 int  save_game(Game *g);
 int  load_game(Game *g);
 void load_record(Record *r);
@@ -151,35 +151,37 @@ int main(void)
 {
     Game g;
     int sel;
+    
+    system("chcp 65001");            /* 깃허브 및 UTF-8 환경에서 콘솔 한글 깨짐 방지 */
 
     srand((unsigned)time(NULL));
-    setup_console();                 /* [??]  */
-    hide_cursor();                   /* [??0] */
-    splash_screen();                 /* [??2] */
+    setup_console();                 /* [업9]  */
+    hide_cursor();                   /* [업10] */
+    splash_screen();                 /* [업12] */
 
-    while (1)                        /* [??8] 寃뚯엫???앸굹??硫붾돱濡??뚯븘? ?ㅼ떆 ?섍린 */
+    while (1)                        /* [업38] 게임이 끝나도 메뉴로 돌아와 다시 하기 */
     {
-        sel = main_menu();           /* [??3] */
-        if (sel == 0) {                                  /* ??寃뚯엫 */
+        sel = main_menu();           /* [업13] */
+        if (sel == 0) {                                  /* 새 게임 */
             int diff = select_difficulty();
             if (diff < 0) continue;
             new_game(&g, diff);
             run_game(&g);
         }
-        else if (sel == 1) {                             /* ?댁뼱?섍린 */
+        else if (sel == 1) {                             /* 이어하기 */
             if (load_game(&g)) run_game(&g);
             else {
-                show_msg(C_RED, "??λ맂 寃뚯엫???놁뒿?덈떎.");
+                show_msg(C_RED, "저장된 게임이 없습니다.");
                 snd_error();
                 Sleep(1000);
             }
         }
-        else if (sel == 2) rules_screen();               /* 寃뚯엫 諛⑸쾿 */
-        else if (sel == 3) record_screen();              /* ?꾩쟻 */
-        else if (sel == 4) sound_on = !sound_on;         /* ?뚮━ */
-        else {                                           /* 醫낅즺 */
+        else if (sel == 2) rules_screen();               /* 게임 방법 */
+        else if (sel == 3) record_screen();              /* 전적 */
+        else if (sel == 4) sound_on = !sound_on;         /* 소리 */
+        else {                                           /* 종료 */
             system("cls");
-            print_at(25, 12, C_CYAN, "?뚮젅?댄빐 二쇱뀛??媛먯궗?⑸땲??");
+            print_at(25, 12, C_CYAN, "플레이해 주셔서 감사합니다!");
             Sleep(1000);
             set_color(C_GRAY);
             return 0;
@@ -188,7 +190,7 @@ int main(void)
 }
 
 /* ============================================================
- *  肄섏넄 湲곕낯 湲곕뒫
+ *  콘솔 기본 기능
  * ============================================================ */
 void gotoxy(int x, int y)
 {
@@ -196,13 +198,13 @@ void gotoxy(int x, int y)
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
 }
 
-/* [??1] 湲????諛붽씀湲?*/
+/* [업11] 글자 색 바꾸기 */
 void set_color(int color)
 {
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), (WORD)color);
 }
 
-/* [??0] 源쒕묀?대뒗 而ㅼ꽌 ?④린湲?*/
+/* [업10] 깜빡이는 커서 숨기기 */
 void hide_cursor(void)
 {
     CONSOLE_CURSOR_INFO ci;
@@ -211,14 +213,14 @@ void hide_cursor(void)
     SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &ci);
 }
 
-/* [??] 李??쒕ぉ, 李??ш린 ?ㅼ젙 */
+/* [업9] 창 제목, 창 크기 설정 */
 void setup_console(void)
 {
-    SetConsoleTitleA("100???섏뼱??: ?꾩씠??移대뱶 諛고?");
+    SetConsoleTitleA("100을 넘어라 : 아이템 카드 배틀");
     system("mode con cols=80 lines=32");
 }
 
-/* [??] ??以?吏?곌린 (?붿긽 ?쒓굅) */
+/* [업3] 한 줄 지우기 (잔상 제거) */
 void clear_line(int y)
 {
     gotoxy(1, y);
@@ -236,7 +238,7 @@ void print_at(int x, int y, int color, const char *fmt, ...)
     set_color(C_GRAY);
 }
 
-/* 留??꾨옒 硫붿떆吏 以?*/
+/* 맨 아래 메시지 줄 */
 void show_msg(int color, const char *fmt, ...)
 {
     va_list ap;
@@ -249,10 +251,10 @@ void show_msg(int color, const char *fmt, ...)
     set_color(C_GRAY);
 }
 
-/* [??6] ???낅젰 (諛⑺뼢?ㅻ뒗 1000+肄붾뱶濡??뚮젮以? */
+/* [업16] 키 입력 (방향키는 1000+코드로 돌려줌) */
 int get_key(void)
 {
-    int c = _getch();                       /* [??] getch -> _getch */
+    int c = _getch();                       /* [업6] getch -> _getch */
     if (c == 0 || c == 224)
         return 1000 + _getch();
     return c;
@@ -260,18 +262,18 @@ int get_key(void)
 
 void press_any_key(int y)
 {
-    print_at(3, y, C_DARK, "?꾨Т ?ㅻ굹 ?꾨Ⅴ?몄슂...");
+    print_at(3, y, C_DARK, "아무 키나 누르세요...");
     get_key();
 }
 
-/* [??3] 諛⑺뼢??硫붾돱 (怨듭슜 ?⑥닔) - ?좏깮??踰덊샇 諛섑솚, ESC??-1 */
+/* [업13] 방향키 메뉴 (공용 함수) - 선택한 번호 반환, ESC는 -1 */
 int menu_select(int x, int y, const char *items[], int n, int start)
 {
     int sel = start, i, key;
     while (1)
     {
         for (i = 0; i < n; i++) {
-            if (i == sel) print_at(x, y + i * 2, C_YELLOW, "??%-30s", items[i]);
+            if (i == sel) print_at(x, y + i * 2, C_YELLOW, "▶ %-30s", items[i]);
             else          print_at(x, y + i * 2, C_GRAY,   "   %-30s", items[i]);
         }
         key = get_key();
@@ -283,7 +285,7 @@ int menu_select(int x, int y, const char *items[], int n, int start)
 }
 
 /* ============================================================
- *  [??2] ?④낵??
+ *  [업22] 효과음
  * ============================================================ */
 void snd_move(void)   { if (sound_on) Beep(600, 25); }
 void snd_select(void) { if (sound_on) Beep(900, 60); }
@@ -292,22 +294,22 @@ void snd_card(void)   { if (sound_on) Beep(750, 50); }
 void snd_item(void)   { if (sound_on) { Beep(1200, 70); Beep(1600, 90); } }
 void snd_win(void)
 {
-    int note[] = { 523, 659, 784, 1046 }, i;     /* ??誘?????*/
+    int note[] = { 523, 659, 784, 1046 }, i;     /* 도 미 솔 도 */
     if (!sound_on) return;
     for (i = 0; i < 4; i++) Beep(note[i], 150);
     Beep(1046, 400);
 }
 void snd_lose(void)
 {
-    int note[] = { 784, 659, 523, 392 }, i;      /* ??誘?????*/
+    int note[] = { 784, 659, 523, 392 }, i;      /* 솔 미 도 솔 */
     if (!sound_on) return;
     for (i = 0; i < 4; i++) Beep(note[i], 200);
 }
 
 /* ============================================================
- *  ?붾㈃??
+ *  화면들
  * ============================================================ */
-/* [??2] 1珥?濡쒓퀬 ?붾㈃ */
+/* [업12] 1초 로고 화면 */
 void splash_screen(void)
 {
     int i;
@@ -317,65 +319,65 @@ void splash_screen(void)
     print_at(20, 8,  C_YELLOW, "   ##    ##  ##   ##  ## ");
     print_at(20, 9,  C_YELLOW, "   ##    ##  ##   ##  ## ");
     print_at(20, 10, C_YELLOW, "  ####    ####     ####  ");
-    print_at(26, 12, C_WHITE,  "????????!");
+    print_at(26, 12, C_WHITE,  "을 넘 어 라 !");
     print_at(23, 14, C_CYAN,   "- ITEM CARD BATTLE -");
     print_at(20, 18, C_DARK,   "[                        ]");
-    for (i = 0; i < 24; i++) {                  /* ??1珥?濡쒕뵫 諛?*/
+    for (i = 0; i < 24; i++) {                  /* 약 1초 로딩 바 */
         print_at(21 + i, 18, C_GREEN, "#");
         Sleep(40);
     }
     if (sound_on) { Beep(523, 80); Beep(784, 120); }
 }
 
-/* [??3] 硫붿씤 硫붾돱 */
+/* [업13] 메인 메뉴 */
 int main_menu(void)
 {
     static int last = 0;
     const char *items[6];
-    items[0] = "??寃뚯엫";
-    items[1] = "?댁뼱?섍린";
-    items[2] = "寃뚯엫 諛⑸쾿";
-    items[3] = "?꾩쟻 蹂닿린";
-    items[4] = sound_on ? "?뚮━ : ON" : "?뚮━ : OFF";
-    items[5] = "醫낅즺";
+    items[0] = "새 게임";
+    items[1] = "이어하기";
+    items[2] = "게임 방법";
+    items[3] = "전적 보기";
+    items[4] = sound_on ? "소리 : ON" : "소리 : OFF";
+    items[5] = "종료";
 
     system("cls");
-    print_at(22, 3, C_YELLOW, "??100???섏뼱??: ?꾩씠??移대뱶 諛고? ??);
+    print_at(22, 3, C_YELLOW, "★ 100을 넘어라 : 아이템 카드 배틀 ★");
     print_at(22, 4, C_DARK,   "-------------------------------------");
-    print_at(22, 26, C_DARK,  "?묅넃 : ?대룞     Enter : ?좏깮");
+    print_at(22, 26, C_DARK,  "↑↓ : 이동     Enter : 선택");
     last = menu_select(30, 8, items, 6, last);
     if (last < 0) last = 5;
     return last;
 }
 
-/* [??4] 寃뚯엫 諛⑸쾿 (2?섏씠吏) */
+/* [업14] 게임 방법 (2페이지) */
 void rules_screen(void)
 {
     int i;
     system("cls");
-    print_at(3, 2, C_YELLOW, "[ 寃뚯엫 諛⑸쾿 1/2 : 湲곕낯 洹쒖튃 ]");
-    print_at(3, 4,  C_WHITE, "1. 而댄벂?곗? ?ъ슜?먭? 踰덇컝??1~10 ?レ옄 移대뱶瑜????μ뵫 ?낅땲??");
-    print_at(3, 5,  C_WHITE, "2. ???レ옄???⑷퀎???뷀빐吏怨? 媛숈? ?レ옄???ㅼ떆 ?????놁뒿?덈떎.");
-    print_at(3, 6,  C_WHITE, "3. ?⑷퀎瑜?泥섏쓬?쇰줈 %d蹂대떎 ?ш쾶 留뚮뱺 ?щ엺???밸━?⑸땲??", MAX_SCORE);
-    print_at(3, 7,  C_WHITE, "4. 10?μ쓣 紐⑤몢 ?곕㈃ ?レ옄 移대뱶媛 ?ㅼ떆 梨꾩썙吏묐땲??");
-    print_at(3, 8,  C_WHITE, "5. ?좉났? ?숈쟾 ?섏?湲곕줈 ?뺥빀?덈떎.");
-    print_at(3, 9,  C_WHITE, "6. ??李⑤??먮뒗 %d珥??덉뿉 怨⑤씪???⑸땲?? (?쒓컙 珥덇낵 ??臾댁옉??", TIME_LIMIT);
-    print_at(3, 12, C_CYAN,  "[ 議곗옉踰?]");
-    print_at(3, 13, C_GRAY,  "?먥넂 : 移대뱶 ?대룞     ?묅넃 : ?レ옄 以?/ ?꾩씠??以??꾪솚");
-    print_at(3, 14, C_GRAY,  "Enter : ?좏깮       S : ???      ESC : 硫붾돱濡?);
+    print_at(3, 2, C_YELLOW, "[ 게임 방법 1/2 : 기본 규칙 ]");
+    print_at(3, 4,  C_WHITE, "1. 컴퓨터와 사용자가 번갈아 1~10 숫자 카드를 한 장씩 냅니다.");
+    print_at(3, 5,  C_WHITE, "2. 낸 숫자는 합계에 더해지고, 같은 숫자는 다시 낼 수 없습니다.");
+    print_at(3, 6,  C_WHITE, "3. 합계를 처음으로 %d보다 크게 만든 사람이 승리합니다!", MAX_SCORE);
+    print_at(3, 7,  C_WHITE, "4. 10장을 모두 쓰면 숫자 카드가 다시 채워집니다.");
+    print_at(3, 8,  C_WHITE, "5. 선공은 동전 던지기로 정합니다.");
+    print_at(3, 9,  C_WHITE, "6. 내 차례에는 %d초 안에 골라야 합니다. (시간 초과 시 무작위)", TIME_LIMIT);
+    print_at(3, 12, C_CYAN,  "[ 조작법 ]");
+    print_at(3, 13, C_GRAY,  "←→ : 카드 이동     ↑↓ : 숫자 줄 / 아이템 줄 전환");
+    print_at(3, 14, C_GRAY,  "Enter : 선택       S : 저장       ESC : 메뉴로");
     press_any_key(20);
 
     system("cls");
-    print_at(3, 2, C_YELLOW, "[ 寃뚯엫 諛⑸쾿 2/2 : ?꾩씠??移대뱶 ]");
-    print_at(3, 4, C_WHITE,  "- ?쒖옉?????꾩씠??%d?? %d?대쭏??蹂대꼫???꾩씠??1??(理쒕? %d??",
+    print_at(3, 2, C_YELLOW, "[ 게임 방법 2/2 : 아이템 카드 ]");
+    print_at(3, 4, C_WHITE,  "- 시작할 때 아이템 %d장, %d턴마다 보너스 아이템 1장 (최대 %d장)",
              START_ITEM, BONUS_TURN, ITEM_SLOT);
-    print_at(3, 5, C_WHITE,  "- ?꾩씠?쒖? ???댁뿉 1踰? ?レ옄 移대뱶瑜??닿린 ?꾩뿉 ?ъ슜?⑸땲??");
+    print_at(3, 5, C_WHITE,  "- 아이템은 한 턴에 1번, 숫자 카드를 내기 전에 사용합니다.");
     for (i = 1; i < ITEM_KIND; i++)
         print_at(3, 7 + i * 2, C_GREEN, "%s", ITEM_DESC[i]);
     press_any_key(20);
 }
 
-/* [??6] ?꾩쟻 蹂닿린 */
+/* [업36] 전적 보기 */
 void record_screen(void)
 {
     Record r;
@@ -383,26 +385,26 @@ void record_screen(void)
     load_record(&r);
     total = r.win + r.lose + r.draw;
     system("cls");
-    print_at(30, 5, C_YELLOW, "[ ?섏쓽 ?꾩쟻 ]");
-    print_at(30, 8,  C_BLUE,  "?밸━ : %3d", r.win);
-    print_at(30, 10, C_RED,   "?⑤같 : %3d", r.lose);
-    print_at(30, 12, C_GRAY,  "臾댁듅遺 : %3d", r.draw);
-    print_at(30, 14, C_GREEN, "?밸쪧 : %5.1f%%", total ? r.win * 100.0 / total : 0.0);
+    print_at(30, 5, C_YELLOW, "[ 나의 전적 ]");
+    print_at(30, 8,  C_BLUE,  "승리 : %3d", r.win);
+    print_at(30, 10, C_RED,   "패배 : %3d", r.lose);
+    print_at(30, 12, C_GRAY,  "무승부 : %3d", r.draw);
+    print_at(30, 14, C_GREEN, "승률 : %5.1f%%", total ? r.win * 100.0 / total : 0.0);
     press_any_key(20);
 }
 
-/* [??7] ?붾뵫 ?붾㈃ (?밸━ / ?⑤같 + ?듦퀎) */
+/* [업37] 엔딩 화면 (승리 / 패배 + 통계) */
 void ending_screen(Game *g, int winner)
 {
     Record r;
     int color = (winner == USER) ? C_YELLOW : C_RED;
 
-    load_record(&r);                              /* [??6] ?꾩쟻 ???*/
+    load_record(&r);                              /* [업36] 전적 저장 */
     if (winner == USER) r.win++;
     else if (winner == COM) r.lose++;
     else r.draw++;
     save_record(&r);
-    remove(SAVE_FILE);                            /* ?앸궃 寃뚯엫? ?댁뼱?섍린 遺덇? */
+    remove(SAVE_FILE);                            /* 끝난 게임은 이어하기 불가 */
 
     system("cls");
     if (winner == USER) {
@@ -411,67 +413,67 @@ void ending_screen(Game *g, int winner)
         print_at(18, 5, color, "   #   #   # #   #     # # #   #   # # #");
         print_at(18, 6, color, "   #   #   # #   #     ## ##   #   #  ##");
         print_at(18, 7, color, "   #    ###   ###      #   #  ###  #   #");
-        print_at(30, 9, C_WHITE, "?ъ슜?먭? ?닿꼈?듬땲??");
+        print_at(30, 9, C_WHITE, "사용자가 이겼습니다!");
     } else if (winner == COM) {
         print_at(15, 3, color, " #   #  ###  #   #     #      ###   ####  #####");
         print_at(15, 4, color, "  # #  #   # #   #     #     #   # #      #    ");
         print_at(15, 5, color, "   #   #   # #   #     #     #   #  ###   #### ");
         print_at(15, 6, color, "   #   #   # #   #     #     #   #     #  #    ");
         print_at(15, 7, color, "   #    ###   ###      ####   ###  ####   #####");
-        print_at(30, 9, C_WHITE, "而댄벂?곌? ?닿꼈?듬땲??..");
+        print_at(30, 9, C_WHITE, "컴퓨터가 이겼습니다...");
     } else {
-        print_at(33, 6, C_GRAY, "臾댁듅遺?낅땲??");
+        print_at(33, 6, C_GRAY, "무승부입니다.");
     }
 
-    print_at(25, 12, C_CYAN, "========== 寃뚯엫 寃곌낵 ==========");
-    print_at(27, 14, C_GRAY, "?쒖씠??         : %s", DIFF_NAME[g->difficulty]);
-    print_at(27, 15, C_GRAY, "理쒖쥌 ?⑷퀎       : %d", g->sum);
-    print_at(27, 16, C_GRAY, "吏꾪뻾????      : %d", g->round + 1);
-    print_at(27, 17, C_GRAY, "?ъ슜???꾩씠??  : ??%d / 而댄벂??%d",
+    print_at(25, 12, C_CYAN, "========== 게임 결과 ==========");
+    print_at(27, 14, C_GRAY, "난이도          : %s", DIFF_NAME[g->difficulty]);
+    print_at(27, 15, C_GRAY, "최종 합계       : %d", g->sum);
+    print_at(27, 16, C_GRAY, "진행한 턴       : %d", g->round + 1);
+    print_at(27, 17, C_GRAY, "사용한 아이템   : 나 %d / 컴퓨터 %d",
              g->p[USER].item_used_total, g->p[COM].item_used_total);
     print_at(25, 19, C_CYAN, "===============================");
-    print_at(27, 21, C_GREEN, "?꾩쟻 ?꾩쟻 : %d??%d??%d臾?, r.win, r.lose, r.draw);
+    print_at(27, 21, C_GREEN, "누적 전적 : %d승 %d패 %d무", r.win, r.lose, r.draw);
 
     if (winner == USER) snd_win(); else snd_lose();
     press_any_key(25);
 }
 
 /* ============================================================
- *  寃뚯엫 以鍮?
+ *  게임 준비
  * ============================================================ */
-/* [??3] ?쒖씠???좏깮 */
+/* [업23] 난이도 선택 */
 int select_difficulty(void)
 {
-    const char *items[3] = { "?ъ?   - ?꾨Т嫄곕굹 ?대뒗 而댄벂??,
-                             "蹂댄넻   - ?닿만 ???덉쑝硫??닿린??而댄벂??,
-                             "?대젮? - ?섎? ?쎄퀬 ?꾩씠?쒖쓣 ?곕뒗 而댄벂?? };
+    const char *items[3] = { "쉬움   - 아무거나 내는 컴퓨터",
+                             "보통   - 이길 수 있으면 이기는 컴퓨터",
+                             "어려움 - 수를 읽고 아이템을 쓰는 컴퓨터" };
     system("cls");
-    print_at(25, 3, C_YELLOW, "[ ?쒖씠?꾨? ?좏깮?섏꽭??]");
-    print_at(25, 20, C_DARK, "ESC : ?ㅻ줈");
+    print_at(25, 3, C_YELLOW, "[ 난이도를 선택하세요 ]");
+    print_at(25, 20, C_DARK, "ESC : 뒤로");
     return menu_select(18, 7, items, 3, 1);
 }
 
-/* [??4] ?숈쟾 ?섏?湲곕줈 ?좉났 ?뺥븯湲?*/
+/* [업24] 동전 던지기로 선공 정하기 */
 int coin_toss(void)
 {
-    const char *items[2] = { "?욌㈃", "?룸㈃" };
+    const char *items[2] = { "앞면", "뒷면" };
     int guess, result, i;
 
     system("cls");
-    print_at(22, 3, C_YELLOW, "[ ?숈쟾 ?섏?湲곕줈 ?좉났???뺥빀?덈떎 ]");
-    print_at(22, 5, C_GRAY,   "?욌㈃怨??룸㈃ 以??섎굹瑜?怨좊Ⅴ?몄슂.");
+    print_at(22, 3, C_YELLOW, "[ 동전 던지기로 선공을 정합니다 ]");
+    print_at(22, 5, C_GRAY,   "앞면과 뒷면 중 하나를 고르세요.");
     guess = menu_select(32, 8, items, 2, 0);
     if (guess < 0) guess = 0;
 
     result = rand() % 2;
-    for (i = 0; i < 12; i++) {                      /* ?숈쟾 ?뚯븘媛???곗텧 */
+    for (i = 0; i < 12; i++) {                      /* 동전 돌아가는 연출 */
         print_at(33, 14, (i % 2) ? C_YELLOW : C_WHITE, "(  %s  )", items[i % 2]);
         if (sound_on) Beep(1000, 20);
         Sleep(60 + i * 15);
     }
     print_at(33, 14, C_YELLOW, "(  %s  )", items[result]);
-    if (guess == result) print_at(27, 17, C_BLUE, "留욏삍?듬땲?? ?ъ슜?먭? 癒쇱? ?⑸땲??");
-    else                 print_at(27, 17, C_RED,  "??몄뒿?덈떎! 而댄벂?곌? 癒쇱? ?⑸땲??");
+    if (guess == result) print_at(27, 17, C_BLUE, "맞혔습니다! 사용자가 먼저 합니다.");
+    else                 print_at(27, 17, C_RED,  "틀렸습니다! 컴퓨터가 먼저 합니다.");
     Sleep(1500);
     return (guess == result) ? USER : COM;
 }
@@ -482,11 +484,11 @@ void new_game(Game *g, int difficulty)
     memset(g, 0, sizeof(Game));
     g->magic = SAVE_MAGIC;
     g->difficulty = difficulty;
-    for (w = 0; w < 2; w++)                         /* [??7] ?쒖옉 ?꾩씠??吏湲?*/
+    for (w = 0; w < 2; w++)                         /* [업27] 시작 아이템 지급 */
         for (i = 0; i < START_ITEM; i++)
             g->p[w].items[i] = rand() % (ITEM_KIND - 1) + 1;
     g->turn = coin_toss();
-    add_log(g, "寃뚯엫 ?쒖옉! ?쒖씠?? %s, ?좉났: %s", DIFF_NAME[difficulty], WHO_NAME[g->turn]);
+    add_log(g, "게임 시작! 난이도: %s, 선공: %s", DIFF_NAME[difficulty], WHO_NAME[g->turn]);
 }
 
 void run_game(Game *g)
@@ -497,8 +499,8 @@ void run_game(Game *g)
 }
 
 /* ============================================================
- *  寃뚯엫 吏꾪뻾 (?먮낯 game_control ?泥?
- *  諛섑솚: ?뱀옄(COM/USER), 以묎컙???섍?硫?-1
+ *  게임 진행 (원본 game_control 대체)
+ *  반환: 승자(COM/USER), 중간에 나가면 -1
  * ============================================================ */
 int play_game(Game *g)
 {
@@ -508,17 +510,17 @@ int play_game(Game *g)
         Player *me = &g->p[who];
         int card, value, i;
 
-        /* [??6] ?レ옄 移대뱶 10?μ쓣 ???곕㈃ ?ㅼ떆 梨꾩슦湲?*/
+        /* [업26] 숫자 카드 10장을 다 쓰면 다시 채우기 */
         if (all_used(me)) {
             memset(me->used, 0, sizeof(me->used));
-            add_log(g, "%s???レ옄 移대뱶瑜?紐⑤몢 ?⑥꽌 ?ㅼ떆 梨꾩썱?듬땲??", WHO_NAME[who]);
+            add_log(g, "%s의 숫자 카드를 모두 써서 다시 채웠습니다!", WHO_NAME[who]);
         }
 
         draw_game(g);
 
-        /* [??1] ?⑥? 移대뱶媛 ?꾨? 遊됱씤?섎㈃ ???섍린湲?*/
+        /* [업31] 남은 카드가 전부 봉인되면 턴 넘기기 */
         if (max_playable(me) == 0) {
-            add_log(g, "%s: ?????덈뒗 移대뱶媛 ?놁뼱 ?댁쓣 ?섍퉩?덈떎.", WHO_NAME[who]);
+            add_log(g, "%s: 낼 수 있는 카드가 없어 턴을 넘깁니다.", WHO_NAME[who]);
             memset(me->sealed, 0, sizeof(me->sealed));
             g->turn = 1 - who;
             draw_log(g);
@@ -528,25 +530,25 @@ int play_game(Game *g)
 
         if (who == USER) {
             card = user_turn(g);
-            if (card == 0) return -1;                /* [??8] 硫붾돱濡??섍?湲?*/
+            if (card == 0) return -1;                /* [업38] 메뉴로 나가기 */
         } else {
             card = computer_turn(g);
         }
 
-        /* 移대뱶 ?곸슜 */
-        value = card * (g->double_on ? 2 : 1);       /* [??8] ?붾툝 */
+        /* 카드 적용 */
+        value = card * (g->double_on ? 2 : 1);       /* [업28] 더블 */
         me->used[card] = 1;
         add_history(me, card);
-        memset(me->sealed, 0, sizeof(me->sealed));   /* [??1] 遊됱씤? 1?대쭔 */
+        memset(me->sealed, 0, sizeof(me->sealed));   /* [업31] 봉인은 1턴만 */
         if (g->double_on)
-            add_log(g, "%s: %d 移대뱶 x2 ??+%d", WHO_NAME[who], card, value);
+            add_log(g, "%s: %d 카드 x2 → +%d", WHO_NAME[who], card, value);
         else
-            add_log(g, "%s: %d 移대뱶 ??+%d", WHO_NAME[who], card, value);
+            add_log(g, "%s: %d 카드 → +%d", WHO_NAME[who], card, value);
         g->double_on = 0;
         draw_game(g);
         snd_card();
 
-        /* [??9] ?⑷퀎 移댁슫?몄뾽 ?좊땲硫붿씠??*/
+        /* [업19] 합계 카운트업 애니메이션 */
         for (i = 0; i < value; i++) {
             g->sum++;
             draw_gauge(g);
@@ -557,12 +559,12 @@ int play_game(Game *g)
             return who;
 
         g->round++;
-        if (g->round % BONUS_TURN == 0)              /* [??2] 蹂대꼫???꾩씠??*/
+        if (g->round % BONUS_TURN == 0)              /* [업32] 보너스 아이템 */
             give_bonus(g);
 
-        if (g->skip_next) {                          /* [??0] ???ㅽ궢 */
+        if (g->skip_next) {                          /* [업30] 턴 스킵 */
             g->skip_next = 0;
-            add_log(g, "???ㅽ궢 ?④낵! %s媛 ??踰????⑸땲??", WHO_NAME[who]);
+            add_log(g, "턴 스킵 효과! %s가 한 번 더 합니다.", WHO_NAME[who]);
         } else {
             g->turn = 1 - who;
         }
@@ -571,8 +573,8 @@ int play_game(Game *g)
     }
 }
 
-/* [??][??][??6][??5] ?ъ슜??李⑤?
- *  諛⑺뼢???좏깮?대씪 踰붿쐞 諛??レ옄/臾몄옄 ?낅젰???먯쿇?곸쑝濡?遺덇???*/
+/* [업1][업2][업16][업25] 사용자 차례
+ *  방향키 선택이라 범위 밖 숫자/문자 입력이 원천적으로 불가능 */
 int user_turn(Game *g)
 {
     Player *me = &g->p[USER];
@@ -583,16 +585,16 @@ int user_turn(Game *g)
     draw_hand(g, row, col, item_used);
     while (1)
     {
-        /* [??5] ?쒗븳 ?쒓컙 */
+        /* [업25] 제한 시간 */
         remain = TIME_LIMIT - (int)((clock() - start) / CLOCKS_PER_SEC);
         if (remain != last_sec) {
             last_sec = remain;
-            print_at(3, 28, remain <= 5 ? C_RED : C_GRAY, "?⑥? ?쒓컙 : %2d珥?", remain < 0 ? 0 : remain);
+            print_at(3, 28, remain <= 5 ? C_RED : C_GRAY, "남은 시간 : %2d초 ", remain < 0 ? 0 : remain);
             if (remain <= 5 && remain > 0 && sound_on) Beep(1000, 30);
         }
         if (remain <= 0) {
             int n = random_playable(me);
-            add_log(g, "?쒓컙 珥덇낵! ?ъ슜??移대뱶媛 臾댁옉?꾨줈 ?좏깮?먯뒿?덈떎.");
+            add_log(g, "시간 초과! 사용자 카드가 무작위로 선택됐습니다.");
             snd_error();
             return n;
         }
@@ -612,11 +614,11 @@ int user_turn(Game *g)
         else if (key == KEY_ENTER) {
             if (row == 0) {
                 if (playable(me, col + 1)) { snd_select(); return col + 1; }
-                show_msg(C_RED, me->sealed[col + 1] ? "遊됱씤??移대뱶?낅땲??" : "?대? ?ъ슜???レ옄?낅땲??");
+                show_msg(C_RED, me->sealed[col + 1] ? "봉인된 카드입니다!" : "이미 사용한 숫자입니다!");
                 snd_error();
             } else {
-                if (item_used)                        show_msg(C_RED, "?꾩씠?쒖? ???댁뿉 1踰덈쭔 ?????덉뒿?덈떎!");
-                else if (me->items[col] == ITEM_NONE) show_msg(C_RED, "鍮??щ’?낅땲??");
+                if (item_used)                        show_msg(C_RED, "아이템은 한 턴에 1번만 쓸 수 있습니다!");
+                else if (me->items[col] == ITEM_NONE) show_msg(C_RED, "빈 슬롯입니다!");
                 else {
                     use_item(g, USER, col);
                     item_used = 1;
@@ -630,28 +632,28 @@ int user_turn(Game *g)
                 snd_error();
             }
         }
-        else if (key == 's' || key == 'S') {          /* [??4] ???*/
-            if (item_used)        show_msg(C_RED, "?꾩씠?쒖쓣 ???댁뿉????ν븷 ???놁뒿?덈떎.");
-            else if (save_game(g)) show_msg(C_GREEN, "寃뚯엫????ν뻽?듬땲?? (硫붾돱 > ?댁뼱?섍린)");
-            else                  show_msg(C_RED, "??μ뿉 ?ㅽ뙣?덉뒿?덈떎.");
+        else if (key == 's' || key == 'S') {          /* [업34] 저장 */
+            if (item_used)        show_msg(C_RED, "아이템을 쓴 턴에는 저장할 수 없습니다.");
+            else if (save_game(g)) show_msg(C_GREEN, "게임을 저장했습니다! (메뉴 > 이어하기)");
+            else                  show_msg(C_RED, "저장에 실패했습니다.");
         }
-        else if (key == KEY_ESC) {                    /* [??8] ?쇱떆?뺤? */
+        else if (key == KEY_ESC) {                    /* [업38] 일시정지 */
             pause_start = clock();
-            show_msg(C_YELLOW, "?쇱떆?뺤? - 硫붾돱濡??섍컝源뚯슂? ???????吏꾪뻾? ?щ씪吏묐땲??(Y/N)");
+            show_msg(C_YELLOW, "일시정지 - 메뉴로 나갈까요? 저장 안 한 진행은 사라집니다 (Y/N)");
             key = get_key();
             if (key == 'y' || key == 'Y') return 0;
-            start += clock() - pause_start;           /* 硫덉텣 ?쒓컙留뚰겮 ??대㉧ 蹂댁젙 */
+            start += clock() - pause_start;           /* 멈춘 시간만큼 타이머 보정 */
             clear_line(29);
         }
         draw_hand(g, row, col, item_used);
     }
 }
 
-/* [??0] 而댄벂??李⑤? (?앷컖 以??곗텧 + ?쒖씠?꾨퀎 AI) */
+/* [업20] 컴퓨터 차례 (생각 중 연출 + 난이도별 AI) */
 int computer_turn(Game *g)
 {
     int i;
-    show_msg(C_RED, "而댄벂?곌? ?앷컖 以?);
+    show_msg(C_RED, "컴퓨터가 생각 중");
     for (i = 0; i < 3; i++) { printf("."); Sleep(300); }
     clear_line(29);
 
@@ -660,7 +662,7 @@ int computer_turn(Game *g)
     return ai_hard(g);
 }
 
-/* [??7~31] ?꾩씠???ъ슜 */
+/* [업27~31] 아이템 사용 */
 void use_item(Game *g, int who, int slot)
 {
     Player *me = &g->p[who], *opp = &g->p[1 - who];
@@ -671,32 +673,32 @@ void use_item(Game *g, int who, int slot)
     snd_item();
 
     switch (type) {
-    case ITEM_DOUBLE:                                 /* [??8] */
+    case ITEM_DOUBLE:                                 /* [업28] */
         g->double_on = 1;
-        add_log(g, "%s: [?붾툝 x2] ?ъ슜! ?대쾲 ?レ옄媛 2諛곌? ?⑸땲??", WHO_NAME[who]);
+        add_log(g, "%s: [더블 x2] 사용! 이번 숫자가 2배가 됩니다.", WHO_NAME[who]);
         break;
-    case ITEM_MINUS:                                  /* [??9] */
+    case ITEM_MINUS:                                  /* [업29] */
         g->sum -= MINUS_VALUE;
         if (g->sum < 0) g->sum = 0;
-        add_log(g, "%s: [?⑷퀎 -10] ?ъ슜! ?⑷퀎媛 %d濡?以꾩뿀?듬땲??", WHO_NAME[who], g->sum);
+        add_log(g, "%s: [합계 -10] 사용! 합계가 %d로 줄었습니다.", WHO_NAME[who], g->sum);
         break;
-    case ITEM_SKIP:                                   /* [??0] */
+    case ITEM_SKIP:                                   /* [업30] */
         g->skip_next = 1;
-        add_log(g, "%s: [???ㅽ궢] ?ъ슜! ?곷? ?댁쓣 嫄대꼫?곷땲??", WHO_NAME[who]);
+        add_log(g, "%s: [턴 스킵] 사용! 상대 턴을 건너뜁니다.", WHO_NAME[who]);
         break;
-    case ITEM_SEAL:                                   /* [??1] */
+    case ITEM_SEAL:                                   /* [업31] */
         n = max_playable(opp);
         if (n) {
             opp->sealed[n] = 1;
-            add_log(g, "%s: [遊됱씤] ?ъ슜! ?곷???%d 移대뱶瑜?遊됱씤?덉뒿?덈떎.", WHO_NAME[who], n);
+            add_log(g, "%s: [봉인] 사용! 상대의 %d 카드를 봉인했습니다.", WHO_NAME[who], n);
         } else {
-            add_log(g, "%s: [遊됱씤] ?ъ슜... 遊됱씤??移대뱶媛 ?놁뒿?덈떎.", WHO_NAME[who]);
+            add_log(g, "%s: [봉인] 사용... 봉인할 카드가 없습니다.", WHO_NAME[who]);
         }
         break;
     }
 }
 
-/* [??2] 蹂대꼫???꾩씠??*/
+/* [업32] 보너스 아이템 */
 void give_bonus(Game *g)
 {
     int w, i;
@@ -706,11 +708,11 @@ void give_bonus(Game *g)
                 g->p[w].items[i] = rand() % (ITEM_KIND - 1) + 1;
                 break;
             }
-    add_log(g, "%d??蹂대꼫?? ?묒そ???꾩씠??1?μ뵫 吏湲?(鍮??щ’???덉쓣 ??", BONUS_TURN);
+    add_log(g, "%d턴 보너스! 양쪽에 아이템 1장씩 지급 (빈 슬롯이 있을 때)", BONUS_TURN);
     if (sound_on) { Beep(880, 60); Beep(1320, 60); }
 }
 
-/* [??1] 濡쒓렇 異붽? (?ㅻ옒??以꾩? ?꾨줈 諛?ㅻ궓) */
+/* [업21] 로그 추가 (오래된 줄은 위로 밀려남) */
 void add_log(Game *g, const char *fmt, ...)
 {
     va_list ap;
@@ -733,7 +735,7 @@ void add_history(Player *p, int card)
 }
 
 /* ============================================================
- *  洹몃━湲?
+ *  그리기
  * ============================================================ */
 void draw_game(Game *g)
 {
@@ -741,50 +743,50 @@ void draw_game(Game *g)
     Player *com = &g->p[COM], *user = &g->p[USER];
 
     system("cls");
-    /* ?곷떒 ?뺣낫 */
-    print_at(2, 1, C_CYAN, "100???섏뼱??: ?꾩씠??移대뱶 諛고?");
-    print_at(50, 1, C_GRAY, "?쒖씠??: %-6s ??: %d", DIFF_NAME[g->difficulty], g->round + 1);
+    /* 상단 정보 */
+    print_at(2, 1, C_CYAN, "100을 넘어라 : 아이템 카드 배틀");
+    print_at(50, 1, C_GRAY, "난이도 : %-6s 턴 : %d", DIFF_NAME[g->difficulty], g->round + 1);
     print_at(1, 2, C_DARK, "-------------------------------------------------------------------------------");
 
-    /* 而댄벂???곸뿭 */
-    print_at(2, 3, g->turn == COM ? C_RED : C_DARK, "[而댄벂??%s", g->turn == COM ? " ? 李⑤?" : "");
-    print_at(18, 3, C_GRAY, "?レ옄 :");
+    /* 컴퓨터 영역 */
+    print_at(2, 3, g->turn == COM ? C_RED : C_DARK, "[컴퓨터]%s", g->turn == COM ? " ◀ 차례" : "");
+    print_at(18, 3, C_GRAY, "숫자 :");
     for (n = MIN_NUM; n <= MAX_NUM; n++) {
         int c = com->used[n] ? C_DARK : (com->sealed[n] ? C_MAGENTA : C_RED);
         print_at(25 + (n - 1) * 3, 3, c, "%2d", n);
     }
-    print_at(18, 4, C_GRAY, "?꾩씠??:");
+    print_at(18, 4, C_GRAY, "아이템 :");
     for (i = 0; i < ITEM_SLOT; i++)
         print_at(27 + i * 4, 4, com->items[i] ? C_RED : C_DARK, com->items[i] ? "[?]" : "[ ]");
-    print_at(18, 5, C_GRAY, "理쒓렐 :");
+    print_at(18, 5, C_GRAY, "최근 :");
     for (i = 0; i < com->history_count; i++)
         print_at(25 + i * 3, 5, C_RED, "%2d", com->history[i]);
 
     draw_gauge(g);
     draw_status(g);
 
-    print_at(1, 10, C_DARK, "------------------------------- 寃뚯엫 湲곕줉 -------------------------------------");
+    print_at(1, 10, C_DARK, "------------------------------- 게임 기록 -------------------------------------");
     draw_log(g);
     print_at(1, 16, C_DARK, "-------------------------------------------------------------------------------");
 
-    /* ?ъ슜???곸뿭 */
-    print_at(2, 17, g->turn == USER ? C_BLUE : C_DARK, "[?ъ슜??%s", g->turn == USER ? " ? 李⑤?" : "");
-    print_at(18, 17, C_GRAY, "理쒓렐 :");
+    /* 사용자 영역 */
+    print_at(2, 17, g->turn == USER ? C_BLUE : C_DARK, "[사용자]%s", g->turn == USER ? " ◀ 차례" : "");
+    print_at(18, 17, C_GRAY, "최근 :");
     for (i = 0; i < user->history_count; i++)
         print_at(25 + i * 3, 17, C_BLUE, "%2d", user->history[i]);
 
     draw_hand(g, 0, -1, 0);
-    print_at(3, 27, C_DARK, "?먥넂:?대룞  ?묅넃:?レ옄/?꾩씠???꾪솚  Enter:?좏깮  S:??? ESC:硫붾돱");
+    print_at(3, 27, C_DARK, "←→:이동  ↑↓:숫자/아이템 전환  Enter:선택  S:저장  ESC:메뉴");
 }
 
-/* [??7] ?⑷퀎 寃뚯씠吏 諛?*/
+/* [업17] 합계 게이지 바 */
 void draw_gauge(Game *g)
 {
     int i, fill = g->sum * GAUGE_LEN / MAX_SCORE;
     int color = g->sum < 70 ? C_GREEN : (g->sum < 90 ? C_YELLOW : C_RED);
     if (fill > GAUGE_LEN) fill = GAUGE_LEN;
 
-    print_at(2, 7, C_WHITE, "?⑷퀎 %3d / %d  ", g->sum, MAX_SCORE);
+    print_at(2, 7, C_WHITE, "합계 %3d / %d  ", g->sum, MAX_SCORE);
     set_color(C_DARK);  printf("[");
     set_color(color);
     for (i = 0; i < GAUGE_LEN; i++) printf(i < fill ? "#" : " ");
@@ -792,14 +794,14 @@ void draw_gauge(Game *g)
     set_color(C_GRAY);
 }
 
-/* ?꾩옱 嫄몃젮 ?덈뒗 ?④낵 ?쒖떆 */
+/* 현재 걸려 있는 효과 표시 */
 void draw_status(Game *g)
 {
     clear_line(8);
     gotoxy(2, 8);
-    if (g->double_on) { set_color(C_YELLOW);  printf("[?붾툝 ?곸슜 以? "); }
-    if (g->skip_next) { set_color(C_CYAN);    printf("[???ㅽ궢 ?덉빟] "); }
-    set_color(C_MAGENTA); printf("  蹂대씪???レ옄 = 遊됱씤??移대뱶");
+    if (g->double_on) { set_color(C_YELLOW);  printf("[더블 적용 중] "); }
+    if (g->skip_next) { set_color(C_CYAN);    printf("[턴 스킵 예약] "); }
+    set_color(C_MAGENTA); printf("  보라색 숫자 = 봉인된 카드");
     set_color(C_GRAY);
 }
 
@@ -812,7 +814,7 @@ void draw_log(Game *g)
     }
 }
 
-/* [??5] 移대뱶 紐⑥뼇 洹몃━湲?*/
+/* [업15] 카드 모양 그리기 */
 void draw_box(int x, int y, int w, const char *text, int color, int selected)
 {
     int i;
@@ -830,14 +832,14 @@ void draw_box(int x, int y, int w, const char *text, int color, int selected)
     set_color(C_GRAY);
 }
 
-/* [??5][??8] ?먰뙣留??ㅼ떆 洹몃━湲?(?붾㈃ ?꾩껜瑜?吏?곗? ?딆븘 源쒕묀??媛먯냼) */
+/* [업15][업18] 손패만 다시 그리기 (화면 전체를 지우지 않아 깜빡임 감소) */
 void draw_hand(Game *g, int row, int col, int item_used)
 {
     Player *me = &g->p[USER];
     char buf[20];
     int n, i, color, sel;
 
-    print_at(3, 18, row == 0 && col >= 0 ? C_WHITE : C_DARK, "?レ옄 移대뱶");
+    print_at(3, 18, row == 0 && col >= 0 ? C_WHITE : C_DARK, "숫자 카드");
     for (n = MIN_NUM; n <= MAX_NUM; n++) {
         sel = (row == 0 && col == n - 1);
         if (me->used[n])        color = C_DARK;
@@ -848,7 +850,7 @@ void draw_hand(Game *g, int row, int col, int item_used)
         draw_box(3 + (n - 1) * 7, 19, 6, buf, color, sel);
     }
 
-    print_at(3, 22, row == 1 ? C_WHITE : C_DARK, "?꾩씠??移대뱶%s", item_used ? " (?대쾲 ???ъ슜 ?꾨즺)" : "                    ");
+    print_at(3, 22, row == 1 ? C_WHITE : C_DARK, "아이템 카드%s", item_used ? " (이번 턴 사용 완료)" : "                    ");
     for (i = 0; i < ITEM_SLOT; i++) {
         sel = (row == 1 && col == i);
         if (me->items[i] == ITEM_NONE || item_used) color = C_DARK;
@@ -858,14 +860,14 @@ void draw_hand(Game *g, int row, int col, int item_used)
         draw_box(3 + i * 14, 23, 12, buf, color, sel);
     }
 
-    /* ?좏깮???꾩씠???ㅻ챸 */
+    /* 선택한 아이템 설명 */
     clear_line(26);
     if (row == 1 && me->items[col] != ITEM_NONE)
         print_at(3, 26, C_GREEN, "%s", ITEM_DESC[me->items[col]]);
 }
 
 /* ============================================================
- *  ?먮떒 ?꾩슦誘?+ [??3][??3] AI
+ *  판단 도우미 + [업23][업33] AI
  * ============================================================ */
 int playable(Player *p, int n) { return !p->used[n] && !p->sealed[n]; }
 
@@ -911,7 +913,7 @@ int item_count(Player *p)
     return cnt;
 }
 
-/* ?곷?媛 ?ㅼ쓬 ?댁뿉 ?????덈뒗 媛?????レ옄 (???쇱쑝硫?由ы븘?섎?濡?MAX_NUM) */
+/* 상대가 다음 턴에 낼 수 있는 가장 큰 숫자 (다 썼으면 리필되므로 MAX_NUM) */
 int next_max(Player *p)
 {
     int n, any = 0;
@@ -924,7 +926,7 @@ int next_max(Player *p)
     return any ? 0 : MAX_NUM;
 }
 
-/* 吏湲??대㈃ 諛붾줈 ?닿린??媛???묒? 移대뱶 (?놁쑝硫?0) */
+/* 지금 내면 바로 이기는 가장 작은 카드 (없으면 0) */
 int winning_card(Game *g, Player *me)
 {
     int n, mul = g->double_on ? 2 : 1;
@@ -933,7 +935,7 @@ int winning_card(Game *g, Player *me)
     return 0;
 }
 
-/* ?닿퀬 ?섏꽌???곷?媛 諛붾줈 紐??닿린??移대뱶 以?媛????寃?(?놁쑝硫?0) */
+/* 내고 나서도 상대가 바로 못 이기는 카드 중 가장 큰 것 (없으면 0) */
 int safe_card(Game *g)
 {
     Player *me = &g->p[COM], *opp = &g->p[USER];
@@ -944,13 +946,13 @@ int safe_card(Game *g)
     return 0;
 }
 
-/* ?ъ? : 臾댁옉?? ?꾩씠????? */
+/* 쉬움 : 무작위, 아이템 안 씀 */
 int ai_easy(Game *g)
 {
     return random_playable(&g->p[COM]);
 }
 
-/* 蹂댄넻 : ?닿만 ???덉쑝硫??닿린怨? 媛???꾩씠?쒖쓣 ?꾨Т嫄곕굹 ? */
+/* 보통 : 이길 수 있으면 이기고, 가끔 아이템을 아무거나 씀 */
 int ai_normal(Game *g)
 {
     Player *me = &g->p[COM];
@@ -968,16 +970,16 @@ int ai_normal(Game *g)
     return random_playable(me);
 }
 
-/* ?대젮? : ?밸━?????덉쟾?????꾩씠?쒖쑝濡??꾧린 ?덉텧 (?꾩씠?쒖? ?대떦 1媛? */
+/* 어려움 : 승리수 → 안전수 → 아이템으로 위기 탈출 (아이템은 턴당 1개) */
 int ai_hard(Game *g)
 {
     Player *me = &g->p[COM], *opp = &g->p[USER];
     int c, slot, n;
 
-    /* 1) 諛붾줈 ?닿만 ???덉쑝硫??밸━ */
+    /* 1) 바로 이길 수 있으면 승리 */
     if ((c = winning_card(g, me)) != 0) return c;
 
-    /* 2) ?붾툝???곕㈃ ?닿만 ???덉쑝硫??ъ슜 */
+    /* 2) 더블을 쓰면 이길 수 있으면 사용 */
     slot = find_item(me, ITEM_DOUBLE);
     if (slot >= 0 && g->sum + max_playable(me) * 2 > MAX_SCORE) {
         use_item(g, COM, slot);
@@ -985,15 +987,15 @@ int ai_hard(Game *g)
         return winning_card(g, me);
     }
 
-    /* 3) ?곷??먭쾶 ?밸━ 湲고쉶瑜?二쇱? ?딅뒗 移대뱶 */
+    /* 3) 상대에게 승리 기회를 주지 않는 카드 */
     if ((c = safe_card(g)) != 0) return c;
 
-    /* 4) ?꾧린! ?꾩씠?쒖쑝濡?留됯린 */
+    /* 4) 위기! 아이템으로 막기 */
     slot = find_item(me, ITEM_SEAL);
     if (slot >= 0 && (n = max_playable(opp)) != 0) {
-        opp->sealed[n] = 1;                 /* 誘몃━ 遊됱씤??蹂닿퀬 */
+        opp->sealed[n] = 1;                 /* 미리 봉인해 보고 */
         c = safe_card(g);
-        opp->sealed[n] = 0;                 /* ?먮옒?濡?*/
+        opp->sealed[n] = 0;                 /* 원래대로 */
         if (c) {
             use_item(g, COM, slot);
             draw_game(g); Sleep(500);
@@ -1014,12 +1016,12 @@ int ai_hard(Game *g)
         return max_playable(me);
     }
 
-    /* 5) 諛⑸쾿???놁쑝硫?媛???묒? ?섎줈 踰꾪떚湲?*/
+    /* 5) 방법이 없으면 가장 작은 수로 버티기 */
     return min_playable(me);
 }
 
 /* ============================================================
- *  [??4][??5][??6] ?뚯씪 ???/ 遺덈윭?ㅺ린
+ *  [업34][업35][업36] 파일 저장 / 불러오기
  * ============================================================ */
 int save_game(Game *g)
 {
@@ -1037,7 +1039,7 @@ int load_game(Game *g)
     if (fp == NULL) return 0;
     ok = (fread(g, sizeof(Game), 1, fp) == 1) && (g->magic == SAVE_MAGIC);
     fclose(fp);
-    if (ok) add_log(g, "??λ맂 寃뚯엫??遺덈윭?붿뒿?덈떎.");
+    if (ok) add_log(g, "저장된 게임을 불러왔습니다.");
     return ok;
 }
 
